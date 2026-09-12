@@ -44,7 +44,7 @@ source:
       - patches/0009-Revert-Breaking-change-make-generator-headers-privat.patch
 
 build:
-  number: 3
+  number: 4
 
 outputs:
   - name: libprotobuf
@@ -82,12 +82,14 @@ outputs:
         - {{ compiler('cxx') }}
         - binutils  # [unix]
         - grep      # [unix]
-        - m2-grep   # [win]
+        - m2-grep   # [win and not arm64]
         - cmake
         - ninja
         - pkg-config
+        - zlib  # [win and arm64]
       files:
         - cmake_test/
+        - consumer/  # [win and arm64]
       commands:
         {% for each_lib in proto_libraries + utf8_libraries %}
         # shared libraries
@@ -119,7 +121,8 @@ outputs:
         ] %}
         - nm -g $PREFIX/lib/libupb.a | grep -E "[TD] {{ symb }}"                            # [linux]
         - nm -g $PREFIX/lib/libupb.a | grep -E "[TD] _{{ symb }}"                           # [osx]
-        - dumpbin -symbols %LIBRARY_LIB%\libupb.lib | grep -E "SECT.*External.*{{ symb }}"  # [win]
+        - dumpbin -symbols %LIBRARY_LIB%\libupb.lib | grep -E "SECT.*External.*{{ symb }}"  # [win and not arm64]
+        - dumpbin -symbols %LIBRARY_LIB%\libupb.lib | findstr /R /C:"SECT.*External.*{{ symb }}"  # [win and arm64]
         {% endfor %}
 
         # cmake
@@ -138,6 +141,11 @@ outputs:
         - cmake -GNinja $CMAKE_ARGS .   # [unix]
         - cmake -GNinja %CMAKE_ARGS% .  # [win]
         - cmake --build .
+        - cmake -S ../consumer -B ../consumer-build -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%LIBRARY_PREFIX%"  # [win and arm64]
+        - cmake --build ../consumer-build  # [win and arm64]
+        - ..\consumer-build\protobuf_consumer.exe  # [win and arm64]
+        - dumpbin /headers ..\consumer-build\protobuf_consumer.exe | findstr /I /C:"AA64 machine (ARM64)"  # [win and arm64]
+        - dumpbin /headers "%LIBRARY_BIN%\protoc.exe" | findstr /I /C:"AA64 machine (ARM64)"  # [win and arm64]
 
   - name: libprotobuf-static
     script: build-lib.sh  # [unix]
@@ -177,6 +185,7 @@ outputs:
         - zlib
       files:
         - cmake_test/
+        - consumer/  # [win and arm64]
       commands:
         {% for each_lib in proto_libraries %}
         # static libraries
@@ -189,6 +198,11 @@ outputs:
         - cmake -GNinja $CMAKE_ARGS .   # [unix]
         - cmake -GNinja %CMAKE_ARGS% .  # [win]
         - cmake --build .
+        - cmake -S ../consumer -B ../consumer-build -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="%LIBRARY_PREFIX%"  # [win and arm64]
+        - cmake --build ../consumer-build  # [win and arm64]
+        - ..\consumer-build\protobuf_consumer.exe  # [win and arm64]
+        - dumpbin /headers ..\consumer-build\protobuf_consumer.exe | findstr /I /C:"AA64 machine (ARM64)"  # [win and arm64]
+        - dumpbin /headers "%LIBRARY_BIN%\protoc.exe" | findstr /I /C:"AA64 machine (ARM64)"  # [win and arm64]
 
   - name: libprotobuf-python-headers
     script: build-pyheaders.sh  # [unix]

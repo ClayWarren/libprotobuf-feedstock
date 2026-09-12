@@ -34,7 +34,7 @@ if %ERRORLEVEL% neq 0 exit 1
 
 if "%PKG_NAME%"=="libprotobuf" (
     ctest --progress --output-on-failure
-    if %ERRORLEVEL% neq 0 exit 1
+    if errorlevel 1 exit /b 1
 )
 
 cmake --install .
