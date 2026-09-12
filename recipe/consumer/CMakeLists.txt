@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(protobuf_consumer LANGUAGES CXX)
+find_package(Protobuf CONFIG REQUIRED)
+add_executable(protobuf_consumer main.cpp sample.proto)
+protobuf_generate(TARGET protobuf_consumer LANGUAGE cpp)
+target_include_directories(protobuf_consumer PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_compile_features(protobuf_consumer PRIVATE cxx_std_17)
+target_link_libraries(protobuf_consumer PRIVATE protobuf::libprotobuf)

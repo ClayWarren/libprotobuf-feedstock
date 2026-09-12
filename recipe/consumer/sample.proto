@@ -1,0 +1,3 @@
+syntax = "proto3";
+package arm64test;
+message Sample { string name = 1; repeated sint64 values = 2; }
